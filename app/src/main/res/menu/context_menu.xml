@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/remove_task_mi"
+        android:title="Remover Tarefa" />
+    <item
+        android:id="@+id/edit_task_mi"
+        android:title="Editar Tarefa" />
+
+    <item
+        android:id="@+id/details_mi"
+        android:title="Detalhes" />
+</menu>
