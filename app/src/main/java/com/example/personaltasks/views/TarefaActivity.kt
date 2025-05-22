@@ -4,11 +4,13 @@ import android.app.DatePickerDialog
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.personaltasks.databinding.TarefaActivityBinding
 import com.example.personaltasks.model.Tarefa.Companion.EXTRA_TAREFA
 import com.example.personaltasks.model.Tarefa
+import com.example.personaltasks.model.Tarefa.Companion.EXTRA_VIEW_TAREFA
 import java.time.LocalDate
 import java.util.Calendar
 
@@ -69,8 +71,20 @@ class TarefaActivity : AppCompatActivity() {
             with(binding) {
                 titleEt.setText(tarefa.titulo)
                 descriptionEt.setText(tarefa.descricao)
-                openDialogBt.text = tarefa.dataVencimento
+                openDialogBt.visibility = View.VISIBLE
+                dateTv.visibility = View.GONE
                 dataSelecionada = LocalDate.parse(tarefa.dataVencimento)
+                openDialogBt.text = dataSelecionada.toString()
+
+                if (intent.getBooleanExtra(EXTRA_VIEW_TAREFA, false)) {
+                    supportActionBar?.subtitle = "Visualizar Tarefa"
+                    titleEt.isEnabled = false
+                    descriptionEt.isEnabled = false
+                    openDialogBt.visibility = View.GONE
+                    dateTv.visibility = View.VISIBLE
+                    dateTv.text = tarefa.dataVencimento
+                    saveBt.visibility = View.GONE
+                }
             }
         }
     }
@@ -79,8 +93,7 @@ class TarefaActivity : AppCompatActivity() {
         binding.saveBt.setOnClickListener {
             val titulo = binding.titleEt.text.toString().trim()
             val descricao = binding.descriptionEt.text.toString().trim()
-            val data = dataSelecionada?.toString()
-                ?: intent.getParcelableExtra<Tarefa>(EXTRA_TAREFA)?.dataVencimento
+            val data = dataSelecionada?.toString() ?: intent.getParcelableExtra<Tarefa>(EXTRA_TAREFA)?.dataVencimento
 
             if (titulo.isNotBlank() && descricao.isNotBlank() && data != null) {
                 val tarefa = Tarefa(
