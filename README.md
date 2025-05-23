@@ -34,7 +34,7 @@ ministrada pelo professor **Pedro Northon Nobile**. O app foi construído utiliz
 ## ▶️ Vídeo Demonstrativo
 
 Um vídeo curto demonstrando o funcionamento completo do aplicativo está incluído com o nome:  
-🎥 **`TesteApp.mp4`**
+🎥 **`TesteApp.webm`**
 
 ---
 
