@@ -42,22 +42,35 @@ class TarefaActivity : AppCompatActivity() {
         val calendario = Calendar.getInstance()
 
         binding.openDialogBt.setOnClickListener {
-            DatePickerDialog(
+            val datePickerDialog = DatePickerDialog(
                 this,
                 { _, anoSelecionado, mesSelecionado, diaSelecionado ->
-                    dataSelecionada = LocalDate.of(
+                    val dataEscolhida = LocalDate.of(
                         anoSelecionado,
                         mesSelecionado + 1,
                         diaSelecionado
                     )
-                    binding.openDialogBt.text = dataSelecionada.toString()
+
+                    val hoje = LocalDate.now()
+                    if (dataEscolhida.isBefore(hoje)) {
+                        Toast.makeText(this, "Selecione uma data futura ou a data de hoje.", Toast.LENGTH_SHORT).show()
+                    } else {
+                        dataSelecionada = dataEscolhida
+                        binding.openDialogBt.text = dataSelecionada.toString()
+                    }
                 },
                 calendario.get(Calendar.YEAR),
                 calendario.get(Calendar.MONTH),
                 calendario.get(Calendar.DAY_OF_MONTH)
-            ).show()
+            )
+
+            // impede seleção de datas passadas
+            datePickerDialog.datePicker.minDate = calendario.timeInMillis
+
+            datePickerDialog.show()
         }
     }
+
 
     private fun tratarDadosRecebidos() {
         val tarefaRecebida = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
