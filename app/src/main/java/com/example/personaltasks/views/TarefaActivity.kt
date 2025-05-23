@@ -51,25 +51,20 @@ class TarefaActivity : AppCompatActivity() {
                         diaSelecionado
                     )
 
-                    val hoje = LocalDate.now()
-                    if (dataEscolhida.isBefore(hoje)) {
-                        Toast.makeText(this, "Selecione uma data futura ou a data de hoje.", Toast.LENGTH_SHORT).show()
-                    } else {
-                        dataSelecionada = dataEscolhida
-                        binding.openDialogBt.text = dataSelecionada.toString()
-                    }
+                    dataSelecionada = dataEscolhida
+                    binding.openDialogBt.text = dataSelecionada.toString()
                 },
                 calendario.get(Calendar.YEAR),
                 calendario.get(Calendar.MONTH),
                 calendario.get(Calendar.DAY_OF_MONTH)
             )
 
-            // impede seleção de datas passadas
             datePickerDialog.datePicker.minDate = calendario.timeInMillis
 
             datePickerDialog.show()
         }
     }
+
 
 
     private fun tratarDadosRecebidos() {
