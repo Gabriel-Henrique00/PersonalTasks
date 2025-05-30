@@ -5,6 +5,7 @@ import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.SearchView
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -23,13 +24,15 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity(), OnTarefaClickListener {
+
     private val binding: ActivityMainBinding by lazy {
         ActivityMainBinding.inflate(layoutInflater)
     }
 
     private val listaTarefas: MutableList<Tarefa> = mutableListOf()
+    private val listaFiltrada: MutableList<Tarefa> = mutableListOf()
     private val tarefaAdapter: TarefasAdapter by lazy {
-        TarefasAdapter(listaTarefas, this)
+        TarefasAdapter(listaFiltrada, this)
     }
 
     private lateinit var lancadorActivity: ActivityResultLauncher<Intent>
@@ -80,24 +83,52 @@ class MainActivity : AppCompatActivity(), OnTarefaClickListener {
 
         if (posicao == -1) {
             listaTarefas.add(tarefa)
-            tarefaAdapter.notifyItemInserted(listaTarefas.lastIndex)
+            filtrarLista("")
             controlador.inserirTarefa(tarefa)
-
             Toast.makeText(this, "Tarefa adicionada com sucesso!", Toast.LENGTH_SHORT).show()
-
-
         } else {
             listaTarefas[posicao] = tarefa
-            tarefaAdapter.notifyItemChanged(posicao)
+            filtrarLista("")
             controlador.atualizarTarefa(tarefa)
             Toast.makeText(this, "Tarefa atualizada com sucesso!", Toast.LENGTH_SHORT).show()
         }
     }
 
-
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_main, menu)
+
+        val searchItem = menu?.findItem(R.id.search_task_mi)
+        val searchView = searchItem?.actionView as? androidx.appcompat.widget.SearchView
+
+        searchView?.queryHint = "Pesquisar tarefas..."
+
+        searchView?.setOnQueryTextListener(object : androidx.appcompat.widget.SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                return false
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                filtrarLista(newText ?: "")
+                return true
+            }
+        })
+
         return true
+    }
+
+
+
+    private fun filtrarLista(texto: String) {
+        val textoMinusculo = texto.lowercase()
+        listaFiltrada.clear()
+        if (texto.isEmpty()) {
+            listaFiltrada.addAll(listaTarefas)
+        } else {
+            listaFiltrada.addAll(listaTarefas.filter {
+                it.titulo.lowercase().contains(textoMinusculo)
+            })
+        }
+        tarefaAdapter.notifyDataSetChanged()
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -106,8 +137,29 @@ class MainActivity : AppCompatActivity(), OnTarefaClickListener {
                 abrirTelaAdicionarTarefa()
                 true
             }
-            else -> false
+            else -> super.onOptionsItemSelected(item)
         }
+    }
+
+    override fun onToggleStatusMenuClicado(posicao: Int) {
+        val tarefa = listaFiltrada[posicao].copy(
+            concluida = !listaFiltrada[posicao].concluida
+        )
+        atualizarTarefaNaLista(tarefa)
+    }
+
+    override fun onToggleStatusDireto(posicao: Int, novoStatus: Boolean) {
+        val tarefa = listaFiltrada[posicao].copy(concluida = novoStatus)
+        atualizarTarefaNaLista(tarefa)
+    }
+
+    private fun atualizarTarefaNaLista(tarefa: Tarefa) {
+        val posicaoOriginal = listaTarefas.indexOfFirst { it.id == tarefa.id }
+        if (posicaoOriginal != -1) {
+            listaTarefas[posicaoOriginal] = tarefa
+        }
+        filtrarLista("")
+        controlador.atualizarTarefa(tarefa)
     }
 
     private fun abrirTelaAdicionarTarefa() {
@@ -116,23 +168,23 @@ class MainActivity : AppCompatActivity(), OnTarefaClickListener {
 
     override fun onCliqueTarefa(posicao: Int) {
         Intent(this, TarefaActivity::class.java).apply {
-            putExtra(EXTRA_TAREFA, listaTarefas[posicao])
+            putExtra(EXTRA_TAREFA, listaFiltrada[posicao])
             putExtra(EXTRA_VIEW_TAREFA, true)
             startActivity(this)
         }
     }
 
     override fun onRemoverTarefaMenuClicado(posicao: Int) {
-        val tarefa = listaTarefas[posicao]
-        listaTarefas.removeAt(posicao)
-        tarefaAdapter.notifyItemRemoved(posicao)
+        val tarefa = listaFiltrada[posicao]
+        listaTarefas.removeIf { it.id == tarefa.id }
+        filtrarLista("")
         controlador.removerTarefa(tarefa)
         Toast.makeText(this, "Tarefa removida!", Toast.LENGTH_SHORT).show()
     }
 
     override fun onEditarTarefaMenuClicado(posicao: Int) {
         Intent(this, TarefaActivity::class.java).apply {
-            putExtra(EXTRA_TAREFA, listaTarefas[posicao])
+            putExtra(EXTRA_TAREFA, listaFiltrada[posicao])
             lancadorActivity.launch(this)
         }
     }
@@ -146,7 +198,6 @@ class MainActivity : AppCompatActivity(), OnTarefaClickListener {
             }
 
             listaTarefas.addAll(tarefas)
-            tarefaAdapter.notifyDataSetChanged()
-        }
+            filtrarLista("")
     }
-}
+}}

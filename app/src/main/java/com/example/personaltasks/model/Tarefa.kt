@@ -12,7 +12,8 @@ data class Tarefa(
     val id: Int? = ID_TAREFA_INVALIDO,
     var titulo: String = "",
     var descricao: String = "",
-    var dataVencimento: String? = ""
+    var dataVencimento: String? = "",
+    var concluida: Boolean = false
 ) : Parcelable {
 
     companion object {

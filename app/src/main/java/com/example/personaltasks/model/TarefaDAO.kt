@@ -23,4 +23,7 @@ interface TarefaDAO {
 
     @Delete
     fun removerTarefa(tarefa: Tarefa): Int
+
+    @Query("UPDATE tarefas SET concluida = :concluida WHERE id = :id")
+    fun atualizarStatus(id: Int, concluida: Boolean)
 }

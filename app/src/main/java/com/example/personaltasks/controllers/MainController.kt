@@ -1,3 +1,4 @@
+// MainController.kt
 package com.example.personaltasks.controllers
 
 import androidx.room.Room
@@ -18,8 +19,10 @@ class MainController(
         Room.databaseBuilder(
             mainActivity,
             TarefaDataBase::class.java,
-            "task-database"
-        ).build()
+            TarefaDataBase.NOME_BANCO_DADOS
+        )
+            .fallbackToDestructiveMigration()
+            .build()
     }
     private val tarefaDao: TarefaDAO by lazy { bancoDeDados.tarefaDao() }
 
@@ -37,10 +40,15 @@ class MainController(
         executarEmBackground { tarefaDao.removerTarefa(tarefa) }
     }
 
+    fun atualizarStatusTarefa(id: Int?, concluida: Boolean) {
+        id?.let {
+            executarEmBackground { tarefaDao.atualizarStatus(it, concluida) }
+        }
+    }
+
     private fun executarEmBackground(acao: suspend () -> Unit) {
         escopoCorrotinas.launch {
             withContext(Dispatchers.IO) { acao() }
         }
     }
 }
-

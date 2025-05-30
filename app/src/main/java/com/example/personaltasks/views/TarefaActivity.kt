@@ -8,8 +8,8 @@ import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.personaltasks.databinding.TarefaActivityBinding
-import com.example.personaltasks.model.Tarefa.Companion.EXTRA_TAREFA
 import com.example.personaltasks.model.Tarefa
+import com.example.personaltasks.model.Tarefa.Companion.EXTRA_TAREFA
 import com.example.personaltasks.model.Tarefa.Companion.EXTRA_VIEW_TAREFA
 import java.time.LocalDate
 import java.util.Calendar
@@ -60,12 +60,9 @@ class TarefaActivity : AppCompatActivity() {
             )
 
             datePickerDialog.datePicker.minDate = calendario.timeInMillis
-
             datePickerDialog.show()
         }
     }
-
-
 
     private fun tratarDadosRecebidos() {
         val tarefaRecebida = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

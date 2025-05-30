@@ -2,4 +2,7 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="checkbox_tint">#FF4081</color>
+    <color name="concluida">#4CAF50</color>
+    <color name="pendente">#F44336</color>
 </resources>
