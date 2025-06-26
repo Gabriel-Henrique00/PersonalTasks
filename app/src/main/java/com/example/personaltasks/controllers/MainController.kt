@@ -1,54 +1,32 @@
-// MainController.kt
 package com.example.personaltasks.controllers
 
-import androidx.room.Room
+import androidx.lifecycle.LiveData
+import com.example.personaltasks.model.FirestoreTarefasRepository
 import com.example.personaltasks.model.Tarefa
-import com.example.personaltasks.model.TarefaDAO
-import com.example.personaltasks.model.TarefaDataBase
-import com.example.personaltasks.views.MainActivity
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
-class MainController(
-    private val mainActivity: MainActivity
-) {
-    private val escopoCorrotinas = MainScope()
-    private val bancoDeDados: TarefaDataBase by lazy {
-        Room.databaseBuilder(
-            mainActivity,
-            TarefaDataBase::class.java,
-            TarefaDataBase.NOME_BANCO_DADOS
-        )
-            .fallbackToDestructiveMigration()
-            .build()
-    }
-    private val tarefaDao: TarefaDAO by lazy { bancoDeDados.tarefaDao() }
+class MainController(private val firestoreRepository: FirestoreTarefasRepository) {
 
-    fun inserirTarefa(tarefa: Tarefa) {
-        executarEmBackground { tarefaDao.inserirTarefa(tarefa) }
+    fun getTarefas(): LiveData<List<List<Tarefa>>> {
+        return firestoreRepository.tarefas
     }
 
-    fun obterTodasTarefas() = tarefaDao.obterTodasTarefas()
-
-    fun atualizarTarefa(tarefa: Tarefa) {
-        executarEmBackground { tarefaDao.atualizarTarefa(tarefa) }
+    fun getTarefaById(id: String, onResult: (Tarefa?) -> Unit) {
+        firestoreRepository.getTarefaById(id, onResult)
     }
 
-    fun removerTarefa(tarefa: Tarefa) {
-        executarEmBackground { tarefaDao.removerTarefa(tarefa) }
+    fun addTarefa(tarefa: Tarefa, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
+        firestoreRepository.addTarefa(tarefa, onSuccess, onFailure)
     }
 
-    fun atualizarStatusTarefa(id: Int?, concluida: Boolean) {
-        id?.let {
-            executarEmBackground { tarefaDao.atualizarStatus(it, concluida) }
-        }
+    fun updateTarefa(tarefa: Tarefa, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
+        firestoreRepository.updateTarefa(tarefa, onSuccess, onFailure)
     }
 
-    private fun executarEmBackground(acao: suspend () -> Unit) {
-        escopoCorrotinas.launch {
-            withContext(Dispatchers.IO) { acao() }
-        }
+    fun deleteTarefa(tarefaId: String, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
+        firestoreRepository.deleteTarefaPermanently(tarefaId, onSuccess, onFailure)
+    }
+
+    fun stopListening() {
+        firestoreRepository.stopListening()
     }
 }
