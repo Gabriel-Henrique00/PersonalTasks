@@ -5,7 +5,6 @@ import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
-import android.widget.SearchView
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -15,13 +14,13 @@ import com.example.personaltasks.R
 import com.example.personaltasks.adapters.TarefasAdapter
 import com.example.personaltasks.controllers.MainController
 import com.example.personaltasks.databinding.ActivityMainBinding
+import com.example.personaltasks.model.FirestoreTarefasRepository
 import com.example.personaltasks.model.Tarefa
 import com.example.personaltasks.model.Tarefa.Companion.EXTRA_TAREFA
 import com.example.personaltasks.model.Tarefa.Companion.EXTRA_VIEW_TAREFA
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 
 class MainActivity : AppCompatActivity(), OnTarefaClickListener {
 
@@ -36,11 +35,24 @@ class MainActivity : AppCompatActivity(), OnTarefaClickListener {
     }
 
     private lateinit var lancadorActivity: ActivityResultLauncher<Intent>
-    private val controlador: MainController by lazy { MainController(this) }
+    private lateinit var auth: FirebaseAuth
+    private lateinit var firestoreRepository: FirestoreTarefasRepository
+    private lateinit var controlador: MainController
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
+
+        auth = Firebase.auth
+        val userId = auth.currentUser?.uid
+        if (userId == null) {
+            startActivity(Intent(this, AuthActivity::class.java))
+            finish()
+            return
+        }
+        firestoreRepository = FirestoreTarefasRepository(userId)
+        controlador = MainController(firestoreRepository)
 
         configurarToolbar()
         configurarRecyclerView()
@@ -79,18 +91,26 @@ class MainActivity : AppCompatActivity(), OnTarefaClickListener {
     }
 
     private fun atualizarListaTarefas(tarefa: Tarefa) {
-        val posicao = listaTarefas.indexOfFirst { it.id == tarefa.id }
+        val isNewTask = tarefa.id == null || listaTarefas.none { it.id == tarefa.id }
 
-        if (posicao == -1) {
-            listaTarefas.add(tarefa)
-            filtrarLista("")
-            controlador.inserirTarefa(tarefa)
-            Toast.makeText(this, "Tarefa adicionada com sucesso!", Toast.LENGTH_SHORT).show()
+        if (isNewTask) {
+            controlador.addTarefa(tarefa,
+                onSuccess = {
+                    Toast.makeText(this, "Tarefa adicionada com sucesso!", Toast.LENGTH_SHORT).show()
+                },
+                onFailure = { e ->
+                    Toast.makeText(this, "Erro ao adicionar tarefa: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            )
         } else {
-            listaTarefas[posicao] = tarefa
-            filtrarLista("")
-            controlador.atualizarTarefa(tarefa)
-            Toast.makeText(this, "Tarefa atualizada com sucesso!", Toast.LENGTH_SHORT).show()
+            controlador.updateTarefa(tarefa,
+                onSuccess = {
+                    Toast.makeText(this, "Tarefa atualizada com sucesso!", Toast.LENGTH_SHORT).show()
+                },
+                onFailure = { e ->
+                    Toast.makeText(this, "Erro ao atualizar tarefa: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            )
         }
     }
 
@@ -116,8 +136,6 @@ class MainActivity : AppCompatActivity(), OnTarefaClickListener {
         return true
     }
 
-
-
     private fun filtrarLista(texto: String) {
         val textoMinusculo = texto.lowercase()
         listaFiltrada.clear()
@@ -137,6 +155,16 @@ class MainActivity : AppCompatActivity(), OnTarefaClickListener {
                 abrirTelaAdicionarTarefa()
                 true
             }
+            R.id.toggle_status_mi -> {
+                Toast.makeText(this, "Toggle Status clicado (implementar lógica de filtragem de exibição)", Toast.LENGTH_SHORT).show()
+                true
+            }
+            R.id.logout_mi -> {
+                FirebaseAuth.getInstance().signOut()
+                startActivity(Intent(this, AuthActivity::class.java))
+                finish()
+                true
+            }
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -154,12 +182,14 @@ class MainActivity : AppCompatActivity(), OnTarefaClickListener {
     }
 
     private fun atualizarTarefaNaLista(tarefa: Tarefa) {
-        val posicaoOriginal = listaTarefas.indexOfFirst { it.id == tarefa.id }
-        if (posicaoOriginal != -1) {
-            listaTarefas[posicaoOriginal] = tarefa
-        }
-        filtrarLista("")
-        controlador.atualizarTarefa(tarefa)
+        controlador.updateTarefa(tarefa,
+            onSuccess = {
+                Toast.makeText(this, "Status da tarefa atualizado!", Toast.LENGTH_SHORT).show()
+            },
+            onFailure = { e ->
+                Toast.makeText(this, "Erro ao atualizar status: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        )
     }
 
     private fun abrirTelaAdicionarTarefa() {
@@ -175,11 +205,17 @@ class MainActivity : AppCompatActivity(), OnTarefaClickListener {
     }
 
     override fun onRemoverTarefaMenuClicado(posicao: Int) {
-        val tarefa = listaFiltrada[posicao]
-        listaTarefas.removeIf { it.id == tarefa.id }
-        filtrarLista("")
-        controlador.removerTarefa(tarefa)
-        Toast.makeText(this, "Tarefa removida!", Toast.LENGTH_SHORT).show()
+        val tarefaId = listaFiltrada[posicao].id
+        if (tarefaId != null) {
+            controlador.deleteTarefa(tarefaId,
+                onSuccess = {
+                    Toast.makeText(this, "Tarefa removida!", Toast.LENGTH_SHORT).show()
+                },
+                onFailure = { e ->
+                    Toast.makeText(this, "Erro ao remover tarefa: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            )
+        }
     }
 
     override fun onEditarTarefaMenuClicado(posicao: Int) {
@@ -190,14 +226,17 @@ class MainActivity : AppCompatActivity(), OnTarefaClickListener {
     }
 
     private fun carregarTarefas() {
-        listaTarefas.clear()
-
-        MainScope().launch {
-            val tarefas = withContext(Dispatchers.IO) {
-                controlador.obterTodasTarefas()
+        controlador.getTarefas().observe(this) { listOfLists ->
+            listaTarefas.clear()
+            listOfLists.forEach { list ->
+                listaTarefas.addAll(list)
             }
-
-            listaTarefas.addAll(tarefas)
             filtrarLista("")
+        }
     }
-}}
+
+    override fun onStop() {
+        super.onStop()
+        controlador.stopListening()
+    }
+}
