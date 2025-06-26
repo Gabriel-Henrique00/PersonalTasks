@@ -78,8 +78,10 @@ class TarefaActivity : AppCompatActivity() {
                 descriptionEt.setText(tarefa.descricao)
                 openDialogBt.visibility = View.VISIBLE
                 dateTv.visibility = View.GONE
-                dataSelecionada = LocalDate.parse(tarefa.dataVencimento)
-                openDialogBt.text = dataSelecionada.toString()
+                tarefa.dataVencimento?.let {
+                    dataSelecionada = LocalDate.parse(it)
+                    openDialogBt.text = dataSelecionada.toString()
+                }
 
                 if (intent.getBooleanExtra(EXTRA_VIEW_TAREFA, false)) {
                     supportActionBar?.subtitle = "Visualizar Tarefa"
@@ -98,14 +100,31 @@ class TarefaActivity : AppCompatActivity() {
         binding.saveBt.setOnClickListener {
             val titulo = binding.titleEt.text.toString().trim()
             val descricao = binding.descriptionEt.text.toString().trim()
-            val data = dataSelecionada?.toString() ?: intent.getParcelableExtra<Tarefa>(EXTRA_TAREFA)?.dataVencimento
+
+            val data = dataSelecionada?.toString() ?: run {
+                val existingTarefa = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    intent.getParcelableExtra(EXTRA_TAREFA, Tarefa::class.java)
+                } else {
+                    @Suppress("DEPRECATION")
+                    intent.getParcelableExtra(EXTRA_TAREFA)
+                }
+                existingTarefa?.dataVencimento
+            }
 
             if (titulo.isNotBlank() && descricao.isNotBlank() && data != null) {
+                val tarefaExistente = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    intent.getParcelableExtra(EXTRA_TAREFA, Tarefa::class.java)
+                } else {
+                    @Suppress("DEPRECATION")
+                    intent.getParcelableExtra(EXTRA_TAREFA)
+                }
+
                 val tarefa = Tarefa(
-                    id = intent.getParcelableExtra<Tarefa>(EXTRA_TAREFA)?.id ?: hashCode(),
+                    id = tarefaExistente?.id,
                     titulo = titulo,
                     descricao = descricao,
-                    dataVencimento = data
+                    dataVencimento = data,
+                    concluida = tarefaExistente?.concluida ?: false
                 )
 
                 Intent().apply {
