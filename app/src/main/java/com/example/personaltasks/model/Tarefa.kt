@@ -1,15 +1,14 @@
 package com.example.personaltasks.model
 
 import android.os.Parcelable
-import androidx.room.Entity
-import androidx.room.PrimaryKey
+import com.google.firebase.firestore.DocumentId
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
-@Entity(tableName = "tarefas")
 data class Tarefa(
-    @PrimaryKey(autoGenerate = true)
-    val id: Int? = ID_TAREFA_INVALIDO,
+    @DocumentId
+    var id: String? = null,
+    var userId: String = "",
     var titulo: String = "",
     var descricao: String = "",
     var dataVencimento: String? = "",
@@ -17,7 +16,6 @@ data class Tarefa(
 ) : Parcelable {
 
     companion object {
-        const val ID_TAREFA_INVALIDO = -1
         const val EXTRA_TAREFA = "EXTRA_TAREFA"
         const val EXTRA_VIEW_TAREFA = "EXTRA_VIEW_TAREFA"
     }
