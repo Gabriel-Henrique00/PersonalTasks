@@ -19,4 +19,9 @@
         app:showAsAction="always|collapseActionView"
         app:actionViewClass="androidx.appcompat.widget.SearchView" />
 
+    <item
+        android:id="@+id/logout_mi"
+        android:title="Sair"
+        app:showAsAction="never"/>
+
 </menu>
