@@ -28,8 +28,8 @@ class MainActivity : AppCompatActivity(), OnTarefaClickListener {
         ActivityMainBinding.inflate(layoutInflater)
     }
 
-    private val listaTarefas: MutableList<Tarefa> = mutableListOf()
-    private val listaFiltrada: MutableList<Tarefa> = mutableListOf()
+    private val listaTarefas: MutableList<Tarefa> = mutableListOf() // Contém todas as tarefas não excluídas
+    private val listaFiltrada: MutableList<Tarefa> = mutableListOf() // Lista exibida no RecyclerView
     private val tarefaAdapter: TarefasAdapter by lazy {
         TarefasAdapter(listaFiltrada, this)
     }
@@ -39,6 +39,14 @@ class MainActivity : AppCompatActivity(), OnTarefaClickListener {
     private lateinit var firestoreRepository: FirestoreTarefasRepository
     private lateinit var controlador: MainController
 
+    private var currentFilterStatus: FilterStatus = FilterStatus.SHOW_ALL
+    private var currentSearchQuery: String = ""
+
+    enum class FilterStatus {
+        SHOW_ALL,
+        SHOW_ACTIVE,
+        SHOW_COMPLETED
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,7 +65,17 @@ class MainActivity : AppCompatActivity(), OnTarefaClickListener {
         configurarToolbar()
         configurarRecyclerView()
         configurarLancadorActivity()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        controlador.startListening()
         carregarTarefas()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        controlador.stopListening()
     }
 
     private fun configurarToolbar() {
@@ -70,6 +88,7 @@ class MainActivity : AppCompatActivity(), OnTarefaClickListener {
             adapter = tarefaAdapter
             layoutManager = LinearLayoutManager(this@MainActivity)
         }
+        registerForContextMenu(binding.listaTarefasRv)
     }
 
     private fun configurarLancadorActivity() {
@@ -86,6 +105,7 @@ class MainActivity : AppCompatActivity(), OnTarefaClickListener {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             getParcelableExtra(EXTRA_TAREFA, Tarefa::class.java)
         } else {
+            @Suppress("DEPRECATION")
             getParcelableExtra(EXTRA_TAREFA)
         }
     }
@@ -128,25 +148,13 @@ class MainActivity : AppCompatActivity(), OnTarefaClickListener {
             }
 
             override fun onQueryTextChange(newText: String?): Boolean {
-                filtrarLista(newText ?: "")
+                currentSearchQuery = newText ?: ""
+                aplicarFiltros()
                 return true
             }
         })
 
         return true
-    }
-
-    private fun filtrarLista(texto: String) {
-        val textoMinusculo = texto.lowercase()
-        listaFiltrada.clear()
-        if (texto.isEmpty()) {
-            listaFiltrada.addAll(listaTarefas)
-        } else {
-            listaFiltrada.addAll(listaTarefas.filter {
-                it.titulo.lowercase().contains(textoMinusculo)
-            })
-        }
-        tarefaAdapter.notifyDataSetChanged()
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -155,8 +163,18 @@ class MainActivity : AppCompatActivity(), OnTarefaClickListener {
                 abrirTelaAdicionarTarefa()
                 true
             }
-            R.id.toggle_status_mi -> {
-                Toast.makeText(this, "Toggle Status clicado (implementar lógica de filtragem de exibição)", Toast.LENGTH_SHORT).show()
+            R.id.filter_status_mi -> {
+                currentFilterStatus = when (currentFilterStatus) {
+                    FilterStatus.SHOW_ALL -> FilterStatus.SHOW_ACTIVE
+                    FilterStatus.SHOW_ACTIVE -> FilterStatus.SHOW_COMPLETED
+                    FilterStatus.SHOW_COMPLETED -> FilterStatus.SHOW_ALL
+                }
+                Toast.makeText(this, "Exibindo: ${currentFilterStatus.name.replace("_", " ")}", Toast.LENGTH_SHORT).show()
+                aplicarFiltros()
+                true
+            }
+            R.id.deleted_tasks_mi -> {
+                startActivity(Intent(this, DeletedTasksActivity::class.java))
                 true
             }
             R.id.logout_mi -> {
@@ -169,11 +187,28 @@ class MainActivity : AppCompatActivity(), OnTarefaClickListener {
         }
     }
 
+    private fun aplicarFiltros() {
+        var tempLista = listaTarefas.toMutableList()
+
+        tempLista = when (currentFilterStatus) {
+            FilterStatus.SHOW_ACTIVE -> tempLista.filter { !it.concluida }.toMutableList()
+            FilterStatus.SHOW_COMPLETED -> tempLista.filter { it.concluida }.toMutableList()
+            FilterStatus.SHOW_ALL -> tempLista
+        }
+
+        if (currentSearchQuery.isNotEmpty()) {
+            val textoMinusculo = currentSearchQuery.lowercase()
+            tempLista = tempLista.filter {
+                it.titulo.lowercase().contains(textoMinusculo)
+            }.toMutableList()
+        }
+
+        listaFiltrada.clear()
+        listaFiltrada.addAll(tempLista)
+        tarefaAdapter.notifyDataSetChanged()
+    }
+
     override fun onToggleStatusMenuClicado(posicao: Int) {
-        val tarefa = listaFiltrada[posicao].copy(
-            concluida = !listaFiltrada[posicao].concluida
-        )
-        atualizarTarefaNaLista(tarefa)
     }
 
     override fun onToggleStatusDireto(posicao: Int, novoStatus: Boolean) {
@@ -207,12 +242,12 @@ class MainActivity : AppCompatActivity(), OnTarefaClickListener {
     override fun onRemoverTarefaMenuClicado(posicao: Int) {
         val tarefaId = listaFiltrada[posicao].id
         if (tarefaId != null) {
-            controlador.deleteTarefa(tarefaId,
+            controlador.markTarefaAsDeleted(tarefaId,
                 onSuccess = {
-                    Toast.makeText(this, "Tarefa removida!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Tarefa movida para excluídas!", Toast.LENGTH_SHORT).show()
                 },
                 onFailure = { e ->
-                    Toast.makeText(this, "Erro ao remover tarefa: ${e.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this, "Erro ao mover tarefa para excluídas: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             )
         }
@@ -225,18 +260,28 @@ class MainActivity : AppCompatActivity(), OnTarefaClickListener {
         }
     }
 
-    private fun carregarTarefas() {
-        controlador.getTarefas().observe(this) { listOfLists ->
-            listaTarefas.clear()
-            listOfLists.forEach { list ->
-                listaTarefas.addAll(list)
-            }
-            filtrarLista("")
+    override fun onRestoreTarefaMenuClicado(posicao: Int) {
+    }
+
+    override fun onDeletePermanentlyMenuClicado(posicao: Int) {
+        val tarefaId = listaFiltrada[posicao].id
+        if (tarefaId != null) {
+            controlador.deleteTarefaPermanently(tarefaId,
+                onSuccess = {
+                    Toast.makeText(this, "Tarefa excluída permanentemente!", Toast.LENGTH_SHORT).show()
+                },
+                onFailure = { e ->
+                    Toast.makeText(this, "Erro ao excluir tarefa permanentemente: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            )
         }
     }
 
-    override fun onStop() {
-        super.onStop()
-        controlador.stopListening()
+    private fun carregarTarefas() {
+        controlador.getNonDeletedTarefas().observe(this) { nonDeletedList ->
+            listaTarefas.clear()
+            listaTarefas.addAll(nonDeletedList)
+            aplicarFiltros()
+        }
     }
 }
