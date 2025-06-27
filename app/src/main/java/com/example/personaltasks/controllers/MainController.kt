@@ -6,8 +6,12 @@ import com.example.personaltasks.model.Tarefa
 
 class MainController(private val firestoreRepository: FirestoreTarefasRepository) {
 
-    fun getTarefas(): LiveData<List<List<Tarefa>>> {
-        return firestoreRepository.tarefas
+    fun getNonDeletedTarefas(): LiveData<List<Tarefa>> {
+        return firestoreRepository.nonDeletedTarefas
+    }
+
+    fun getDeletedTarefas(): LiveData<List<Tarefa>> {
+        return firestoreRepository.deletedTarefas
     }
 
     fun getTarefaById(id: String, onResult: (Tarefa?) -> Unit) {
@@ -22,8 +26,20 @@ class MainController(private val firestoreRepository: FirestoreTarefasRepository
         firestoreRepository.updateTarefa(tarefa, onSuccess, onFailure)
     }
 
-    fun deleteTarefa(tarefaId: String, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
+    fun markTarefaAsDeleted(tarefaId: String, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
+        firestoreRepository.markTarefaAsDeleted(tarefaId, onSuccess, onFailure)
+    }
+
+    fun restoreTarefa(tarefaId: String, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
+        firestoreRepository.restoreTarefa(tarefaId, onSuccess, onFailure)
+    }
+
+    fun deleteTarefaPermanently(tarefaId: String, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
         firestoreRepository.deleteTarefaPermanently(tarefaId, onSuccess, onFailure)
+    }
+
+    fun startListening() {
+        firestoreRepository.startListeningForTasks()
     }
 
     fun stopListening() {
