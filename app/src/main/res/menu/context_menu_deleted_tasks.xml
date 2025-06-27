@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/restore_task_mi"
+        android:title="Reativar Tarefa" />
+    <item
+        android:id="@+id/details_mi"
+        android:title="Detalhes" />
+    <item
+        android:id="@+id/delete_permanently_deleted_task_mi"
+        android:title="Excluir Permanentemente" /> </menu>
