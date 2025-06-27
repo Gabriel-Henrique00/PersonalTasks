@@ -12,7 +12,8 @@ data class Tarefa(
     var titulo: String = "",
     var descricao: String = "",
     var dataVencimento: String? = "",
-    var concluida: Boolean = false
+    var concluida: Boolean = false,
+    var deleted: Boolean = false
 ) : Parcelable {
 
     companion object {
