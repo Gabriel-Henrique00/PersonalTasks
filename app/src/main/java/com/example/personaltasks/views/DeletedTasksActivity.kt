@@ -121,5 +121,16 @@ class DeletedTasksActivity : AppCompatActivity(), OnTarefaClickListener {
     override fun onToggleStatusDireto(posicao: Int, novoStatus: Boolean) {}
 
     override fun onDeletePermanentlyMenuClicado(posicao: Int) {
+        val tarefaId = listaDeletedTarefas[posicao].id
+        if (tarefaId != null) {
+            controlador.deleteTarefaPermanently(tarefaId,
+                onSuccess = {
+                    Toast.makeText(this, "Tarefa excluída permanentemente!", Toast.LENGTH_SHORT).show()
+                },
+                onFailure = { e ->
+                    Toast.makeText(this, "Erro ao excluir tarefa permanentemente: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            )
+        }
     }
 }
