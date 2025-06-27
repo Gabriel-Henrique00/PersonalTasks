@@ -4,6 +4,8 @@ import android.os.Parcelable
 import com.google.firebase.firestore.DocumentId
 import kotlinx.parcelize.Parcelize
 
+
+
 @Parcelize
 data class Tarefa(
     @DocumentId
@@ -13,11 +15,19 @@ data class Tarefa(
     var descricao: String = "",
     var dataVencimento: String? = "",
     var concluida: Boolean = false,
-    var deleted: Boolean = false
+    var deleted: Boolean = false,
+    var priority: Prioridade = Prioridade.BAIXA
 ) : Parcelable {
 
     companion object {
         const val EXTRA_TAREFA = "EXTRA_TAREFA"
         const val EXTRA_VIEW_TAREFA = "EXTRA_VIEW_TAREFA"
+    }
+
+
+    enum class Prioridade{
+        ALTA,
+        MEDIA,
+        BAIXA
     }
 }

@@ -5,4 +5,9 @@
     <string name="descricao">Descrição</string>
     <string name="data_vencimento">Data de Vencimento</string>
     <string name="adicionar_tarefa">Adicionar Tarefa</string>
+    <string-array name="stringPrioridade">
+        <item name="BAIXA" ></item>
+        <item name="MEDIA" ></item>
+        <item name="ALTA" ></item>
+    </string-array>
 </resources>

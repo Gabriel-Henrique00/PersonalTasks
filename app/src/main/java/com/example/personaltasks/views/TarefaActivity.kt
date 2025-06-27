@@ -5,20 +5,24 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.view.View
+import android.widget.Spinner
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.example.personaltasks.R
 import com.example.personaltasks.databinding.TarefaActivityBinding
 import com.example.personaltasks.model.Tarefa
 import com.example.personaltasks.model.Tarefa.Companion.EXTRA_TAREFA
 import com.example.personaltasks.model.Tarefa.Companion.EXTRA_VIEW_TAREFA
 import java.time.LocalDate
 import java.util.Calendar
+import com.example.personaltasks.model.Tarefa.Prioridade
 
 class TarefaActivity : AppCompatActivity() {
     private var dataSelecionada: LocalDate? = null
     private val binding: TarefaActivityBinding by lazy {
         TarefaActivityBinding.inflate(layoutInflater)
     }
+    private lateinit var spinnerPrioridade: Spinner;
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,6 +35,7 @@ class TarefaActivity : AppCompatActivity() {
             setResult(RESULT_CANCELED)
             finish()
         }
+        setContentView(R.layout.)
     }
 
     private fun configurarToolbar() {
@@ -137,4 +142,6 @@ class TarefaActivity : AppCompatActivity() {
             }
         }
     }
+
+    private fun definirPrio
 }

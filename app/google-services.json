@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "463578269523",
+    "firebase_url": "https://personaltasks-5c320-default-rtdb.firebaseio.com",
+    "project_id": "personaltasks-5c320",
+    "storage_bucket": "personaltasks-5c320.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:463578269523:android:e236a35fdb81ba638843a6",
+        "android_client_info": {
+          "package_name": "com.example.personaltasks"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "463578269523-guaik5cu1al6l04fhalp12ipo413uebi.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAzzW_SuW2jy-J5ppavYXgWM2lO5-ClJ8M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "463578269523-95fc3tg85etrmucfvko5a14uebubh4kg.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
