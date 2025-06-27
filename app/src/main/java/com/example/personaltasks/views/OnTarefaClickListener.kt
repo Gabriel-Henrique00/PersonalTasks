@@ -6,4 +6,6 @@ interface OnTarefaClickListener {
     fun onEditarTarefaMenuClicado(posicao: Int)
     fun onToggleStatusMenuClicado(posicao: Int)
     fun onToggleStatusDireto(posicao: Int, novoStatus: Boolean)
+    fun onRestoreTarefaMenuClicado(posicao: Int)
+    fun onDeletePermanentlyMenuClicado(posicao: Int)
 }
