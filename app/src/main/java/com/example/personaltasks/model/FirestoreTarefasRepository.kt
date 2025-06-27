@@ -12,14 +12,16 @@ class FirestoreTarefasRepository(private val userId: String) {
     private val tarefasCollection = db.collection("tarefas")
     private var liveDataTasksRegistration: ListenerRegistration? = null
 
-    private val _tarefas = MutableLiveData<List<List<Tarefa>>>()
-    val tarefas: LiveData<List<List<Tarefa>>> get() = _tarefas
+    private val _nonDeletedTarefas = MutableLiveData<List<Tarefa>>()
+    val nonDeletedTarefas: LiveData<List<Tarefa>> get() = _nonDeletedTarefas
 
-    init {
-        startListeningForTasks()
-    }
+    private val _deletedTarefas = MutableLiveData<List<Tarefa>>()
+    val deletedTarefas: LiveData<List<Tarefa>> get() = _deletedTarefas
 
-    private fun startListeningForTasks() {
+
+    fun startListeningForTasks() {
+        stopListening()
+
         liveDataTasksRegistration = tarefasCollection
             .whereEqualTo("userId", userId)
             .addSnapshotListener { snapshots, e ->
@@ -28,24 +30,25 @@ class FirestoreTarefasRepository(private val userId: String) {
                     return@addSnapshotListener
                 }
 
-                val activeTasks = mutableListOf<Tarefa>()
-                val completedTasks = mutableListOf<Tarefa>()
+                val nonDeletedList = mutableListOf<Tarefa>()
+                val deletedList = mutableListOf<Tarefa>()
 
                 for (doc in snapshots!!) {
                     val tarefa = doc.toObject(Tarefa::class.java)
-
-                    if (tarefa.concluida) {
-                        completedTasks.add(tarefa)
+                    if (tarefa.deleted) {
+                        deletedList.add(tarefa)
                     } else {
-                        activeTasks.add(tarefa)
+                        nonDeletedList.add(tarefa)
                     }
                 }
-                _tarefas.value = listOf(activeTasks, completedTasks)
+                _nonDeletedTarefas.value = nonDeletedList
+                _deletedTarefas.value = deletedList
             }
     }
 
     fun stopListening() {
         liveDataTasksRegistration?.remove()
+        liveDataTasksRegistration = null
     }
 
     fun addTarefa(tarefa: Tarefa, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
@@ -53,7 +56,8 @@ class FirestoreTarefasRepository(private val userId: String) {
         tarefasCollection.add(tarefa)
             .addOnSuccessListener { documentReference ->
                 Log.d("FirestoreRepo", "Tarefa adicionada com ID: ${documentReference.id}")
-                onSuccess()
+                tarefa.id = documentReference.id
+                updateTarefa(tarefa, onSuccess, onFailure)
             }
             .addOnFailureListener { e ->
                 Log.w("FirestoreRepo", "Erro ao adicionar tarefa", e)
@@ -75,6 +79,30 @@ class FirestoreTarefasRepository(private val userId: String) {
         } ?: run {
             onFailure(Exception("ID da tarefa não pode ser nulo para atualização."))
         }
+    }
+
+    fun markTarefaAsDeleted(tarefaId: String, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
+        tarefasCollection.document(tarefaId).update("deleted", true)
+            .addOnSuccessListener {
+                Log.d("FirestoreRepo", "Tarefa marcada como excluída: $tarefaId")
+                onSuccess()
+            }
+            .addOnFailureListener { e ->
+                Log.w("FirestoreRepo", "Erro ao marcar tarefa como excluída", e)
+                onFailure(e)
+            }
+    }
+
+    fun restoreTarefa(tarefaId: String, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
+        tarefasCollection.document(tarefaId).update("deleted", false)
+            .addOnSuccessListener {
+                Log.d("FirestoreRepo", "Tarefa restaurada: $tarefaId")
+                onSuccess()
+            }
+            .addOnFailureListener { e ->
+                Log.w("FirestoreRepo", "Erro ao restaurar tarefa", e)
+                onFailure(e)
+            }
     }
 
     fun deleteTarefaPermanently(tarefaId: String, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
