@@ -5,4 +5,4 @@
     <color name="checkbox_tint">#FF4081</color>
     <color name="concluida">#4CAF50</color>
     <color name="pendente">#F44336</color>
-</resources>
+    <color name="gray_deleted_task">#CCCCCC</color> </resources>
