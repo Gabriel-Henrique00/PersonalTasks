@@ -1,27 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
-
-    <item
-        android:id="@+id/add_task_mi"
-        android:title="adicionar_tarefa"
-        android:icon="@drawable/ic_add"
-        app:showAsAction="always" />
-
-    <item
-        android:id="@+id/toggle_status_mi"
-        android:title="toggle_status"/>
-
     <item
         android:id="@+id/search_task_mi"
         android:title="Pesquisar"
         android:icon="@android:drawable/ic_menu_search"
-        app:showAsAction="always|collapseActionView"
+        app:showAsAction="ifRoom|collapseActionView"
         app:actionViewClass="androidx.appcompat.widget.SearchView" />
-
+    <item
+        android:id="@+id/add_task_mi"
+        android:title="Adicionar Tarefa"
+        android:icon="@android:drawable/ic_input_add"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/filter_status_mi"
+        android:title="Filtrar por Status"
+        android:icon="@android:drawable/ic_menu_sort_by_size"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/deleted_tasks_mi"
+        android:title="Tarefas Excluídas"
+        android:icon="@android:drawable/ic_menu_delete"
+        app:showAsAction="never" />
     <item
         android:id="@+id/logout_mi"
         android:title="Sair"
-        app:showAsAction="never"/>
-
+        android:icon="@android:drawable/ic_menu_close_clear_cancel"
+        app:showAsAction="never" />
 </menu>
